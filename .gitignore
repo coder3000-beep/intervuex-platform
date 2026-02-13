@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment
+.env
+.env.local
+.env.production
+server/.env
+server/.env.production
+
+# Build
+dist/
+build/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.kiro/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads
+uploads/
+server/uploads/
+temp/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Models (download separately)
+public/models/
+
+# Database
+*.db
+*.sqlite
+
+# Misc
+.cache/
+.temp/
+.vite/
+
+# Documentation (keep only essential)
+CLEANUP_SUMMARY.md
