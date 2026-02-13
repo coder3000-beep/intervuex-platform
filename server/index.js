@@ -106,6 +106,19 @@ const startServer = async () => {
     await connectDatabase();
     console.log('✅ Database connected successfully');
 
+    // Run migrations automatically on startup (production)
+    if (process.env.NODE_ENV === 'production') {
+      console.log('� Running database migrations...');
+      try {
+        const { runMigrations } = await import('./migrations/run.js');
+        await runMigrations();
+        console.log('✅ Migrations completed successfully');
+      } catch (migrationError) {
+        console.error('⚠️ Migration error (continuing anyway):', migrationError.message);
+        // Don't exit - tables might already exist
+      }
+    }
+
     httpServer.listen(PORT, () => {
       console.log(`🚀 INTERVUEX Server running on port ${PORT}`);
       console.log(`📡 WebSocket server ready`);
