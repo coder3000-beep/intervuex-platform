@@ -181,20 +181,32 @@ export const recruiterRegister = async (req, res) => {
   try {
     const { fullName, email, password, company } = req.body;
 
+    console.log('📝 Registration attempt:', { email, fullName, company });
+
+    // Validate input
+    if (!fullName || !email || !password) {
+      console.log('❌ Missing required fields');
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
     // Check if email already exists
+    console.log('🔍 Checking if email exists...');
     const existing = await query(
       'SELECT id FROM recruiters WHERE email = $1',
       [email]
     );
 
     if (existing.rows.length > 0) {
+      console.log('❌ Email already registered');
       return res.status(400).json({ error: 'Email already registered' });
     }
 
     // Hash password
+    console.log('🔐 Hashing password...');
     const passwordHash = await bcrypt.hash(password, 10);
 
     // Create recruiter
+    console.log('💾 Creating recruiter record...');
     const result = await query(
       `INSERT INTO recruiters (full_name, email, password_hash, company)
        VALUES ($1, $2, $3, $4)
@@ -203,6 +215,7 @@ export const recruiterRegister = async (req, res) => {
     );
 
     const recruiter = result.rows[0];
+    console.log('✅ Recruiter created:', recruiter.id);
 
     // Generate JWT
     const token = jwt.sign(
@@ -215,6 +228,7 @@ export const recruiterRegister = async (req, res) => {
       { expiresIn: JWT_EXPIRES_IN }
     );
 
+    console.log('✅ Registration successful');
     res.status(201).json({
       success: true,
       token,
@@ -226,8 +240,17 @@ export const recruiterRegister = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Recruiter registration error:', error);
-    res.status(500).json({ error: 'Registration failed' });
+    console.error('❌ Recruiter registration error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      stack: error.stack
+    });
+    res.status(500).json({ 
+      error: 'Registration failed',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
