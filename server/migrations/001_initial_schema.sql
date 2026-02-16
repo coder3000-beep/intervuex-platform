@@ -5,7 +5,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Recruiters Table
-CREATE TABLE recruiters (
+CREATE TABLE IF NOT EXISTS recruiters (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   full_name VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE recruiters (
 );
 
 -- Candidates Table
-CREATE TABLE candidates (
+CREATE TABLE IF NOT EXISTS candidates (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   full_name VARCHAR(255) NOT NULL,
   email VARCHAR(255) NOT NULL,
@@ -31,7 +31,7 @@ CREATE TABLE candidates (
 );
 
 -- Interview Sessions Table
-CREATE TABLE interview_sessions (
+CREATE TABLE IF NOT EXISTS interview_sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   candidate_id UUID REFERENCES candidates(id) ON DELETE CASCADE,
   recruiter_id UUID REFERENCES recruiters(id),
@@ -52,7 +52,7 @@ CREATE TABLE interview_sessions (
 );
 
 -- Violations Table
-CREATE TABLE violations (
+CREATE TABLE IF NOT EXISTS violations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   session_id UUID REFERENCES interview_sessions(id) ON DELETE CASCADE,
   type VARCHAR(100) NOT NULL, -- MULTIPLE_FACES, NO_FACE, SECOND_VOICE, TAB_SWITCH, etc.
@@ -63,7 +63,7 @@ CREATE TABLE violations (
 );
 
 -- Scores Table
-CREATE TABLE scores (
+CREATE TABLE IF NOT EXISTS scores (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   session_id UUID REFERENCES interview_sessions(id) ON DELETE CASCADE,
   technical_score INTEGER,
@@ -80,7 +80,7 @@ CREATE TABLE scores (
 );
 
 -- Audit Logs Table
-CREATE TABLE audit_logs (
+CREATE TABLE IF NOT EXISTS audit_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID,
   session_id UUID REFERENCES interview_sessions(id) ON DELETE CASCADE,
@@ -91,15 +91,15 @@ CREATE TABLE audit_logs (
 );
 
 -- Indexes for performance
-CREATE INDEX idx_sessions_candidate ON interview_sessions(candidate_id);
-CREATE INDEX idx_sessions_recruiter ON interview_sessions(recruiter_id);
-CREATE INDEX idx_sessions_status ON interview_sessions(status);
-CREATE INDEX idx_sessions_token ON interview_sessions(access_token);
-CREATE INDEX idx_violations_session ON violations(session_id);
-CREATE INDEX idx_violations_severity ON violations(severity);
-CREATE INDEX idx_scores_session ON scores(session_id);
-CREATE INDEX idx_scores_status ON scores(shortlist_status);
-CREATE INDEX idx_audit_session ON audit_logs(session_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_candidate ON interview_sessions(candidate_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_recruiter ON interview_sessions(recruiter_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_status ON interview_sessions(status);
+CREATE INDEX IF NOT EXISTS idx_sessions_token ON interview_sessions(access_token);
+CREATE INDEX IF NOT EXISTS idx_violations_session ON violations(session_id);
+CREATE INDEX IF NOT EXISTS idx_violations_severity ON violations(severity);
+CREATE INDEX IF NOT EXISTS idx_scores_session ON scores(session_id);
+CREATE INDEX IF NOT EXISTS idx_scores_status ON scores(shortlist_status);
+CREATE INDEX IF NOT EXISTS idx_audit_session ON audit_logs(session_id);
 
 -- Updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -111,14 +111,18 @@ END;
 $$ language 'plpgsql';
 
 -- Apply updated_at triggers
+DROP TRIGGER IF EXISTS update_recruiters_updated_at ON recruiters;
 CREATE TRIGGER update_recruiters_updated_at BEFORE UPDATE ON recruiters
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_candidates_updated_at ON candidates;
 CREATE TRIGGER update_candidates_updated_at BEFORE UPDATE ON candidates
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_sessions_updated_at ON interview_sessions;
 CREATE TRIGGER update_sessions_updated_at BEFORE UPDATE ON interview_sessions
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_scores_updated_at ON scores;
 CREATE TRIGGER update_scores_updated_at BEFORE UPDATE ON scores
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
