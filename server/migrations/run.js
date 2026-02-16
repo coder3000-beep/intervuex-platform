@@ -14,18 +14,24 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const runMigrations = async () => {
-  const client = new Client({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    database: process.env.DB_NAME || 'intervuex',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
-  });
+export const runMigrations = async () => {
+  // Use DATABASE_URL if available (production), otherwise use individual vars (development)
+  const client = process.env.DATABASE_URL
+    ? new Client({
+        connectionString: process.env.DATABASE_URL,
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      })
+    : new Client({
+        host: process.env.DB_HOST || 'localhost',
+        port: process.env.DB_PORT || 5432,
+        database: process.env.DB_NAME || 'intervuex',
+        user: process.env.DB_USER || 'postgres',
+        password: process.env.DB_PASSWORD || 'postgres',
+      });
 
   try {
     await client.connect();
-    console.log('Connected to database');
+    console.log('Connected to database for migrations');
 
     // Read migration file
     const migrationPath = path.join(__dirname, '001_initial_schema.sql');
@@ -36,11 +42,14 @@ const runMigrations = async () => {
     console.log('✅ Migration completed successfully');
 
   } catch (error) {
-    console.error('❌ Migration failed:', error);
-    process.exit(1);
+    console.error('❌ Migration failed:', error.message);
+    throw error;
   } finally {
     await client.end();
   }
 };
 
-runMigrations();
+// Only run if called directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  runMigrations().catch(console.error);
+}
